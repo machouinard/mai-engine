@@ -909,3 +909,34 @@ function mai_get_admin_post_type() {
 
 	return null;
 }
+
+
+function mai_convert_svgs_to_json() {
+	$data = [];
+	$dirs = mai_get_dir() . 'assets/icons/svgs/';
+	$dir  = new DirectoryIterator( $dirs );
+
+	foreach ( $dir as $directory ) {
+		if ( ! $directory->isDot() ) {
+			$dir_name = $directory->getFilename();
+			foreach ( glob( $dirs . $dir_name . '/*.svg' ) as $file ) {
+				$parts = pathinfo( $file );
+				$data[ $dir_name ][ $parts['filename'] ] = file_get_contents( $file );
+			}
+		}
+	}
+
+	if ( ! $data ) {
+		return;
+	}
+
+	foreach ( $data as $dir => $icons ) {
+		$icons  = json_encode( $icons );
+		$file   = $dirs . "/{$dir}.json";
+		$handle = fopen( $file, 'a' );
+		ob_start();
+		echo $icons;
+		fwrite( $handle, ob_get_clean() );
+		fclose( $handle );
+	}
+}

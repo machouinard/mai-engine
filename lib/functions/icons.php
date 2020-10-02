@@ -158,7 +158,8 @@ function mai_get_icon_default_args() {
 }
 
 /**
- * Description of expected behavior.
+ * Returns an SVG string.
+ * This is for svgs in assets/svg/
  *
  * @since 0.2.0
  *
@@ -182,7 +183,21 @@ function mai_get_svg( $name, $class = '' ) {
 	}
 
 	if ( $class ) {
-		$svg = str_replace( '<svg', "<svg class='$class' ", $svg );
+		$dom  = mai_get_dom_document( $svg );
+		$svgs = $dom->getElementsByTagName( 'svg' );
+
+		/**
+		 * DOM Element.
+		 *
+		 * @var DOMElement $first_svg First dom element.
+		 */
+		$first_svg = isset( $svgs[0] ) ? $svgs[0] : null;
+
+		if ( $first_svg ) {
+			$classes = mai_add_classes( $class, $first_svg->getAttribute( 'class' ) );
+			$first_svg->setAttribute( 'class', $classes );
+			$svg = $dom->saveHTML();
+		}
 	}
 
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
@@ -191,6 +206,7 @@ function mai_get_svg( $name, $class = '' ) {
 
 /**
  * Returns an SVG string.
+ * This is for icon svgs in assets/icons/svgs/
  *
  * @since 2.4.0 Added check for dom element.
  * @since 0.1.0
@@ -202,13 +218,23 @@ function mai_get_svg( $name, $class = '' ) {
  * @return string
  */
 function mai_get_svg_icon( $name, $style = 'light', $atts = [] ) {
-	$file = mai_get_dir() . "assets/icons/svgs/$style/$name.svg";
 
-	if ( ! file_exists( $file ) ) {
-		return '';
+	static $svgs = [];
+
+	if ( ! isset( $svgs[ $style ] ) ) {
+
+		$file = mai_get_dir() . "assets/icons/svgs/$style.json";
+
+		if ( file_exists( $file ) ) {
+			$svgs[ $style ] = json_decode( file_get_contents( $file ), true );
+		}
 	}
 
-	$svg = file_get_contents( $file );
+	if ( ! isset( $svgs[ $style ][ $name ] ) ) {
+		return;
+	}
+
+	$svg = $svgs[ $style ][ $name ];
 	$url = wp_parse_url( home_url() );
 
 	if ( 'https' === $url['scheme'] ) {
@@ -216,8 +242,8 @@ function mai_get_svg_icon( $name, $style = 'light', $atts = [] ) {
 	}
 
 	if ( $atts ) {
-		$dom  = mai_get_dom_document( $svg );
-		$svgs = $dom->getElementsByTagName( 'svg' );
+		$dom = mai_get_dom_document( $svg );
+		$all = $dom->getElementsByTagName( 'svg' );
 
 		foreach ( $atts as $att => $value ) {
 
@@ -226,7 +252,7 @@ function mai_get_svg_icon( $name, $style = 'light', $atts = [] ) {
 			 *
 			 * @var DOMElement $first_svg First dom element.
 			 */
-			$first_svg = isset( $svgs[0] ) ? $svgs[0] : null;
+			$first_svg = isset( $all[0] ) ? $all[0] : null;
 
 			if ( $first_svg ) {
 				$first_svg->setAttribute( $att, $value );
@@ -238,18 +264,4 @@ function mai_get_svg_icon( $name, $style = 'light', $atts = [] ) {
 
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
 	return $svg;
-}
-
-/**
- * Description of expected behavior.
- *
- * @since 0.1.0
- *
- * @param string $name  SVG name.
- * @param string $style SVG style.
- *
- * @return string
- */
-function mai_get_svg_icon_url( $name, $style = 'light' ) {
-	return mai_get_url() . "assets/icons/svgs/$style/$name.svg";
 }

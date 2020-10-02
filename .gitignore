@@ -10,6 +10,10 @@ LICENSE
 README
 temp
 node_modules
+assets/svgs/brands
+assets/svgs/light
+assets/svgs/regular
+assets/svgs/solid
 vendor/*
 !vendor/composer
 vendor/composer/installers
